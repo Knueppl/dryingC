@@ -14,25 +14,6 @@ int main(int argc, char** argv)
     /* Start io-handler thread */
     io.start();
 
-    QFile file("config.xml");
-    QDomDocument doc;
-
-    if (!file.open(QIODevice::ReadOnly))
-    {
-        return 1;
-    }
-
-    if (!doc.setContent(&file))
-    {
-        file.close();
-        return 1;
-    }
-
-    file.close();
-    QDomElement root = doc.firstChild().toElement();
-
-    if (root.isNull() || root.tagName() != "alert_handler")
-        return 1;
 
     AlertHandler alert(root);
     alert.startAlertRoutine();
