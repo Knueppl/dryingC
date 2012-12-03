@@ -5,6 +5,7 @@
 #include "Port.h"
 
 #include <QDomNode>
+#include <QDebug>
 
 DryingControl::DryingControl(const QByteArray& configFile)
     : m_alertHandler(0)
@@ -29,7 +30,10 @@ DryingControl::DryingControl(const QByteArray& configFile)
     const QDomElement root = doc.firstChild().toElement();
 
     if (root.isNull() || root.tagName() != "drying_control")
+    {
+        io << "DryingControl: wrong tag.\n";
         return;
+    }
 
     QDomNodeList nodes(root.childNodes());
 
@@ -39,7 +43,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
 
         if (tag.isNull())
             continue;
-
+        qDebug() << __PRETTY_FUNCTION__ << "tag = " << tag.tagName();
         if (tag.tagName() == "digital_io")
             this->configureDigitalIO(tag);
         else if (tag.tagName() == "alert_handler")
@@ -62,6 +66,7 @@ DryingControl::~DryingControl(void)
 
 void DryingControl::configureDigitalIO(const QDomNode& node)
 {
+    io << "DryingControl: configure digital ios.\n";
     const QDomElement root(node.toElement());
 
     if (root.isNull())

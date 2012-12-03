@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     /* Start io-handler thread */
     io.start();
 
-    DryingControl control();
+    DryingControl control;
 
     return app.exec();
 }
