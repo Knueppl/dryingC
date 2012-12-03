@@ -1,5 +1,5 @@
 #include "IOHandler.h"
-#include "AlertHandler.h"
+#include "DryingControl.h"
 
 #include <QCoreApplication>
 #include <QDomNode>
@@ -14,9 +14,7 @@ int main(int argc, char** argv)
     /* Start io-handler thread */
     io.start();
 
-
-    AlertHandler alert(root);
-    alert.startAlertRoutine();
+    DryingControl control();
 
     return app.exec();
 }

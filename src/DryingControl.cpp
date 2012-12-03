@@ -31,7 +31,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
     if (root.isNull() || root.tagName() != "drying_control")
         return;
 
-    QDomNodeList nodes(root.childrenNodes());
+    QDomNodeList nodes(root.childNodes());
 
     for (int i = 0; i < nodes.size(); i++)
     {
@@ -70,7 +70,7 @@ void DryingControl::configureDigitalIO(const QDomNode& node)
         return;
     }
 
-    QDomNodeList nodes(root.childrenNodes());
+    QDomNodeList nodes(root.childNodes());
     PortFactory factory("/sys/kernel/debug/omap_mux/", "/sys/class/gpio/");
 
     for (int i = 0; i < nodes.size(); i++)
@@ -85,7 +85,7 @@ void DryingControl::configureDigitalIO(const QDomNode& node)
         if (!port)
             continue;
 
-        m_digitalPort.push_back(port);
+        m_digitalIO.push_back(port);
     }
 }
 
