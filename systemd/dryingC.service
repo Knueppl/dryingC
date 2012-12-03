@@ -1,0 +1,11 @@
+[Unit]
+Description=Start dryingC
+DefaultDependencies=no
+After=multi-user.target
+
+[Service]
+Type=forking
+ExecStart=/bin/dryingC
+
+[Install]
+WantedBy=multi-user.target
