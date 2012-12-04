@@ -2,19 +2,56 @@
 #include "DryingControl.h"
 
 #include <QCoreApplication>
-#include <QDomNode>
 #include <QFile>
-#include <QDomDocument>
+#include <QDebug>
+#include <unistd.h>
+#include <sys/types.h>
+
+const char* LOCK_FILE = "/etc/dryingC/daemon.lock";
 
 int main(int argc, char** argv)
 {
-    QCoreApplication app(argc, argv);
-    QObject::connect(&io, SIGNAL(finished()), &app, SLOT(quit()));
+    if (!QFile::exists(LOCK_FILE))
+    {
+        pid_t pid = fork();
 
-    /* Start io-handler thread */
-    io.start();
+        if (pid < 0)
+        {
+            qDebug() << *argv << ": fork fails.";
+            return 1;
+        }
+        if (pid > 0)
+        {
+            qDebug() << *argv << ": daemon started.";
+            return 0;
+        }
 
-    DryingControl control;
+        QFile file(LOCK_FILE);
 
-    return app.exec();
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            qDebug() << *argv << ": can't create lock file \"" << LOCK_FILE << "\".";
+            return 1;
+        }
+
+        file.close();
+
+        /* start daemon process */
+        QCoreApplication app(argc, argv);
+        DryingControl control;
+
+        app.exec();
+
+        if (!QFile::remove(LOCK_FILE))
+        {
+            qDebug() << *argv << ": can't remove lock file \"" << LOCK_FILE << "\".";
+            return 1;
+        }
+
+        return 0;
+    }
+
+
+    /* run as client */
+    return 0;
 }

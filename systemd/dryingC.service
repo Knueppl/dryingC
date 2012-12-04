@@ -1,11 +1,10 @@
 [Unit]
-Description=Start dryingC
+Description=Start dryingC-deamon
 DefaultDependencies=no
-After=multi-user.target
 
 [Service]
 Type=forking
-ExecStart=/bin/dryingC
+ExecStart=/bin/dryingctl
 
 [Install]
 WantedBy=multi-user.target
