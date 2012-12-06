@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 const char* LOCK_FILE = "/etc/dryingC/daemon.lock";
 
@@ -34,6 +35,8 @@ int main(int argc, char** argv)
             return 1;
         }
 
+        umask(0);
+        pid_t sid = setsid();
         file.close();
 
         /* start daemon process */
