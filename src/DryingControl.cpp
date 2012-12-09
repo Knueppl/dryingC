@@ -7,21 +7,27 @@
 #include <QDomNode>
 #include <QDebug>
 
+#define MSG(x) (io() << "DryingControl: " << x << ".")
+
 DryingControl::DryingControl(const QByteArray& configFile)
-    : m_alertHandler(0)
+    : m_alertHandler(0),
+      m_pipeIn("/etc/dryingC/pipe-out.key"),
+      m_pipeOut("/etc/dryingC/pipe-in.key")
 {
+    this->connect(&m_pipeIn, SIGNAL(messageReceived(const PipeSubscriber*)), this, SLOT(messageReceived(const PipeSubscriber*)));
+
     QFile file(configFile);
     QDomDocument doc;
 
     if (!file.open(QIODevice::ReadOnly))
     {
-        io << "DryingControl: can't open file \"" << configFile << "\".\n";
+        io() << "DryingControl: can't open file \"" << configFile << "\".";
         return;
     }
 
     if (!doc.setContent(&file))
     {
-        io << "DryingControl: QDomDocument error.\n";
+        io() << "DryingControl: QDomDocument error.";
         file.close();
         return;
     }
@@ -31,7 +37,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
 
     if (root.isNull() || root.tagName() != "drying_control")
     {
-        io << "DryingControl: wrong tag.\n";
+        io() << "DryingControl: wrong tag.";
         return;
     }
 
@@ -66,12 +72,12 @@ DryingControl::~DryingControl(void)
 
 void DryingControl::configureDigitalIO(const QDomNode& node)
 {
-    io << "DryingControl: configure digital ios.\n";
+    io() << "DryingControl: configure digital ios.";
     const QDomElement root(node.toElement());
 
     if (root.isNull())
     {
-        io << "DryingControl: durring configure digital io. Node isn't a element.\n";
+        io() << "DryingControl: durring configure digital io. Node isn't a element.";
         return;
     }
 
@@ -107,16 +113,54 @@ void DryingControl::smokeAlarmStateChanged(bool value)
 {
     static bool alarmOn = false;
 
-    io << "DryingControl: smoke alarm state changed. New satate = " << value << ".\n";
+    io() << "DryingControl: smoke alarm state changed. New satate = " << value << ".";
 
     if (alarmOn || value)
         return;
 
     if (!m_alertHandler)
     {
-        io << "DryingControl: alert handler not valid.\n";
+        io() << "DryingControl: alert handler not valid.";
         return;
     }
 
     m_alertHandler->startAlertRoutine();
+}
+
+void DryingControl::messageReceived(const PipeSubscriber* pipe)
+{
+    if (pipe->isNull())
+    {
+        MSG("messageReceived, pipe is null");
+        return;
+    }
+
+    if (pipe->isText())
+    {
+        const QByteArray msg(pipe->text());
+        qDebug() << __PRETTY_FUNCTION__ << "text = " << pipe->text();
+        if (msg == "state")
+            this->sendStateThrowPipe();
+
+        /* for future */
+        return;
+    }
+}
+
+namespace {
+const char* MSG_STATE_DIGPORTS = "###############################\n"
+                                 "# Digitalports state          #\n"
+                                 "###############################\n\n";
+}
+
+void DryingControl::sendStateThrowPipe(void)
+{
+    QByteArray msg(MSG_STATE_DIGPORTS);
+    QTextStream stream(msg);
+
+    for (QVector<Port*>::iterator port = m_digitalIO.begin(); port < m_digitalIO.end(); ++port)
+        stream << **port;
+
+    if (!m_pipeOut.send(msg))
+        qDebug() << __PRETTY_FUNCTION__ << "return state = false";
 }

@@ -1,4 +1,5 @@
 #include "IOHandler.h"
+#include "Client.h"
 #include "DryingControl.h"
 
 #include <QCoreApplication>
@@ -14,9 +15,11 @@ const char* LOCK_FILE = "/etc/dryingC/daemon.lock";
 const char* PID_FILE  = "/var/run/dryingC.pid";
 
 
-/* signal handler */
+/* signal handler, says qapplication have to clean up and quit. */
 void signal_handler(int)
 {
+    qDebug() << __PRETTY_FUNCTION__;
+
     if (!QCoreApplication::instance())
         exit(1);
 
@@ -25,71 +28,83 @@ void signal_handler(int)
 
 int main(int argc, char** argv)
 {
-    if (!QFile::exists(LOCK_FILE))
+    /* If lock file does exist, run as client. */
+    if (QFile::exists(LOCK_FILE))
     {
-        pid_t pid = fork();
+        qDebug() << "Lock file \"" << LOCK_FILE << "\" exists. Run as client.";
 
-        if (pid < 0)
-        {
-            qDebug() << *argv << ": fork fails.";
-            return 1;
-        }
-        if (pid > 0)
-        {
-            qDebug() << *argv << ": daemon started.";
-            return 0;
-        }
-
-
-        /* here is the daemon part */
-        struct sigaction action;
-
-        action.sa_handler = signal_handler;
-        sigemptyset(&action.sa_mask);
-        action.sa_flags = 0;
-        sigaction(SIGINT, &action, NULL);
-
-        QFile file(LOCK_FILE);
-
-        if (!file.open(QIODevice::WriteOnly))
-        {
-            qDebug() << *argv << ": can't create lock file \"" << LOCK_FILE << "\".";
-            return 1;
-        }
-
-        umask(0);
-        file.close();
-        pid_t sid = setsid();
-        file.setFileName("/var/run/dryingC.pid");
-
-        if (!file.open(QIODevice::WriteOnly))
-        {
-            QFile::remove(LOCK_FILE);
-            qDebug() << *argv << ": can't create \"" << PID_FILE << "\".";
-            return 1;
-        }
-
-        file.write(QByteArray::number(sid).data());
-        file.close();
-
-
-        /* start daemon process */
         QCoreApplication app(argc, argv);
-        DryingControl control("/etc/config.xml");
+        Client client;
 
-        app.exec();
-        QFile::remove(PID_FILE);
+        return app.exec();
+    }
 
-        if (!QFile::remove(LOCK_FILE))
-        {
-            qDebug() << *argv << ": can't remove lock file \"" << LOCK_FILE << "\".";
-            return 1;
-        }
+    /* Fork and exit to a be a daemon. You know ... */
+    pid_t pid = fork();
 
+    if (pid < 0)
+    {
+        qDebug() << *argv << ": fork fails.";
+        return 1;
+    }
+    if (pid > 0)
+    {
+        qDebug() << *argv << ": daemon started.";
         return 0;
     }
 
 
-    /* run as client */
+    /* Capture SIGINT and SIGTERM to clean up before was killed. Maintainly to remove deamon.lock file. */
+    struct sigaction action;
+
+    action.sa_handler = signal_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    sigaction(SIGINT, &action, NULL);
+    sigaction(SIGTERM, &action, NULL);
+
+    /* Create daemon.lock file. So a second app will run as client. */
+    umask(0);
+    QFile file(LOCK_FILE);
+
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        qDebug() << *argv << ": can't create lock file \"" << LOCK_FILE << "\".";
+        return 1;
+    }
+
+    file.close();
+
+    /* get new pid and create a pid file for systemd. */
+    pid_t sid = setsid();
+    file.setFileName("/var/run/dryingC.pid");
+
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        QFile::remove(LOCK_FILE);
+        qDebug() << *argv << ": can't create \"" << PID_FILE << "\".";
+        return 1;
+    }
+
+    file.write(QByteArray::number(sid).data());
+    file.close();
+
+
+    /* start daemon process */
+    QCoreApplication app(argc, argv);
+    DryingControl control("/etc/config.xml");
+
+    app.exec();
+
+    /* clean up */
+    QFile::remove(PID_FILE);
+
+    if (!QFile::remove(LOCK_FILE))
+    {
+        qDebug() << *argv << ": can't remove lock file \"" << LOCK_FILE << "\".";
+        return 1;
+    }
+
     return 0;
 }
+

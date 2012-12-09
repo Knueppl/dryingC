@@ -1,9 +1,11 @@
 TARGET = dryingC
 
-HEADERS = ../src/DryingControl.h
+HEADERS = ../src/DryingControl.h \
+          ../src/Client.h
 
 SOURCES = ../src/DryingControl.cpp \
-          ../src/main.cpp
+          ../src/main.cpp \
+          ../src/Client.cpp
 
 INCLUDEPATH += ../../emHC/src
 INCLUDEPATH += ../../emHC/src/alert
