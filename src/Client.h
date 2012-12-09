@@ -25,13 +25,14 @@ private:
 
     enum Request {
         None,
-        State
+        State,
+        Exit
     };
 
     PipePublisher m_pipeOut;
     PipeSubscriber m_pipeIn;
     Request m_request;
-//    QTextStream m_userIn;
+    QTextStream m_userIn;
     QTextStream m_userOut;
     QSocketNotifier m_stdinEvent;
 };

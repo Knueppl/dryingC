@@ -17,6 +17,12 @@ class DryingControl : public QObject
     Q_OBJECT
 
 public:
+
+    enum Command {
+        None = 0,
+        Exit
+    };
+
     DryingControl(const QByteArray& configFile = QByteArray("config.xml"));
     ~DryingControl(void);
 

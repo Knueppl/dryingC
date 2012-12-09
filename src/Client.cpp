@@ -1,4 +1,5 @@
 #include "Client.h"
+#include "DryingControl.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -8,9 +9,11 @@
 namespace {
 const char* MSG_HELLO = "dyingC client version 0.0.1\n"
                         "...\n\n\n";
-const char* MSG_MENU = "(a) print currnt state\n"
-                       "(q) quit\n"
-                       "--------------------------\n"
+
+const char* MSG_MENU = "(a)    print currnt state\n"
+                       "(exit) send exit command to daemon\n"
+                       "(q)    quit\n"
+                       "----------------------------------\n"
                        "you want? ";
 }
 
@@ -19,7 +22,7 @@ Client::Client(QObject* parent)
       m_pipeOut("/etc/dryingC/pipe-out.key"),
       m_pipeIn("/etc/dryingC/pipe-in.key"),
       m_request(None),
-//      m_userIn(stdin),
+      m_userIn(stdin, QIODevice::ReadOnly),
       m_userOut(stdout, QIODevice::WriteOnly),
       m_stdinEvent(STDIN_FILENO, QSocketNotifier::Read)
 {
@@ -32,8 +35,6 @@ Client::Client(QObject* parent)
 
 void Client::messageReceived(const PipeSubscriber* pipe)
 {
-    qDebug() << __PRETTY_FUNCTION__;
-
     if (pipe->isNull())
         return;
 
@@ -43,6 +44,16 @@ void Client::messageReceived(const PipeSubscriber* pipe)
         if (pipe->isText())
         {
             m_userOut << pipe->text();
+            m_userOut << MSG_MENU;
+            m_userOut.flush();
+        }
+        break;
+
+    case Exit:
+        if (pipe->isText())
+        {
+            m_userOut << pipe->text() << "\n\n";
+            m_userOut << MSG_MENU;
             m_userOut.flush();
         }
         break;
@@ -55,10 +66,8 @@ void Client::messageReceived(const PipeSubscriber* pipe)
 void Client::userInput(int)
 {
     QByteArray in;
-    QTextStream userIn(stdin, QIODevice::ReadOnly);
 
-    userIn >> in;
-    qDebug() << __PRETTY_FUNCTION__ << "in = " << in;
+    m_userIn >> in;
 
     if (in == "q")
     {
@@ -68,6 +77,11 @@ void Client::userInput(int)
     {
         m_pipeOut.send("state");
         m_request = State;
+    }
+    else if (in == "exit")
+    {
+        m_pipeOut.send(DryingControl::Exit);
+        m_request = Exit;
     }
     else
     {

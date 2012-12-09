@@ -4,6 +4,7 @@
 #include "PortFactory.h"
 #include "Port.h"
 
+#include <QCoreApplication>
 #include <QDomNode>
 #include <QDebug>
 
@@ -49,7 +50,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
 
         if (tag.isNull())
             continue;
-        qDebug() << __PRETTY_FUNCTION__ << "tag = " << tag.tagName();
+
         if (tag.tagName() == "digital_io")
             this->configureDigitalIO(tag);
         else if (tag.tagName() == "alert_handler")
@@ -138,12 +139,29 @@ void DryingControl::messageReceived(const PipeSubscriber* pipe)
     if (pipe->isText())
     {
         const QByteArray msg(pipe->text());
-        qDebug() << __PRETTY_FUNCTION__ << "text = " << pipe->text();
+
         if (msg == "state")
             this->sendStateThrowPipe();
 
         /* for future */
         return;
+    }
+    else if (pipe->isCommand())
+    {
+        switch (pipe->command())
+        {
+        case Exit:
+            if (QCoreApplication::instance())
+            {
+                m_pipeOut.send("dryingC daemon is shuting down...");
+                QCoreApplication::instance()->exit();
+            }
+            break;
+
+        default:
+            MSG("unkown command");
+            break;
+        }
     }
 }
 
@@ -161,6 +179,5 @@ void DryingControl::sendStateThrowPipe(void)
     for (QVector<Port*>::iterator port = m_digitalIO.begin(); port < m_digitalIO.end(); ++port)
         stream << **port;
 
-    if (!m_pipeOut.send(msg))
-        qDebug() << __PRETTY_FUNCTION__ << "return state = false";
+    m_pipeOut.send(msg);
 }
