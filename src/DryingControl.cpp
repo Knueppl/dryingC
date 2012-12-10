@@ -179,18 +179,19 @@ void DryingControl::sendStateThrowPipe(void)
 {
     qDebug() << __PRETTY_FUNCTION__;
     QByteArray msg;
+    QTextStream stream(&msg, QIODevice::WriteOnly);
 
-    msg.append(MSG_STATE_DIGPORTS);
+    stream << MSG_STATE_DIGPORTS;
 
     for (QVector<Port*>::iterator port = m_digitalIO.begin(); port < m_digitalIO.end(); ++port)
-        msg << **port;
+        stream << **port;
 
     if (m_alertHandler)
     {
-        msg.append(MSG_ALERTHANDLER);
-        msg << *m_alertHandler;
+        stream << MSG_ALERTHANDLER;
+        stream << *m_alertHandler;
     }
 
-//    msg = stream.string()->toUtf8();
+    stream.flush();
     m_pipeOut.send(msg);
 }
