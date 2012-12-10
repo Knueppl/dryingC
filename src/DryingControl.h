@@ -23,7 +23,7 @@ public:
         Exit
     };
 
-    DryingControl(const QByteArray& configFile = QByteArray("config.xml"));
+    DryingControl(const QByteArray& configFile = QByteArray("/etc/dryingC/config.xml"));
     ~DryingControl(void);
 
 private slots:

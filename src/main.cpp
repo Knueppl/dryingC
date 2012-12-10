@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 
     /* start daemon process */
     QCoreApplication app(argc, argv);
-    DryingControl control("/etc/config.xml");
+    DryingControl control("/etc/dryingC/config.xml");
 
     app.exec();
 
