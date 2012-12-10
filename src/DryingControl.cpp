@@ -169,15 +169,28 @@ namespace {
 const char* MSG_STATE_DIGPORTS = "###############################\n"
                                  "# Digitalports state          #\n"
                                  "###############################\n\n";
+
+const char* MSG_ALERTHANDLER = "###############################\n"
+                               "# Alert                       #\n"
+                               "###############################\n";
 }
 
 void DryingControl::sendStateThrowPipe(void)
 {
-    QByteArray msg(MSG_STATE_DIGPORTS);
-    QTextStream stream(msg);
+    qDebug() << __PRETTY_FUNCTION__;
+    QByteArray msg;
+
+    msg.append(MSG_STATE_DIGPORTS);
 
     for (QVector<Port*>::iterator port = m_digitalIO.begin(); port < m_digitalIO.end(); ++port)
-        stream << **port;
+        msg << **port;
 
+    if (m_alertHandler)
+    {
+        msg.append(MSG_ALERTHANDLER);
+        msg << *m_alertHandler;
+    }
+
+//    msg = stream.string()->toUtf8();
     m_pipeOut.send(msg);
 }
