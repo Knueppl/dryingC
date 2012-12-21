@@ -2,3 +2,5 @@ build/*.o
 build/moc*.cpp
 build/Makefile
 dryingC
+*.pem
+*.xml

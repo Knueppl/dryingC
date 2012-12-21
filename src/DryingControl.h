@@ -3,15 +3,18 @@
 
 #include "PipePublisher.h"
 #include "PipeSubscriber.h"
+#include "RemoteClient.h"
 
 #include <QObject>
 #include <QVector>
+#include <QList>
 #include <QByteArray>
 
 class QDomNode;
 class Port;
 class AlertHandler;
 class TempSensor;
+class RemoteServer;
 
 class DryingControl : public QObject
 {
@@ -30,6 +33,9 @@ public:
 private slots:
     void smokeAlarmStateChanged(bool value);
     void messageReceived(const PipeSubscriber* pipe);
+    void newRemoteClient(RemoteClient* client);
+    void rmRemoteClient(RemoteClient* client);
+    void commandFromClient(RemoteClient::Command command);
 
 private:
     void configureDigitalIO(const QDomNode& node);
@@ -42,6 +48,8 @@ private:
     AlertHandler* m_alertHandler;
     PipeSubscriber m_pipeIn;
     PipePublisher m_pipeOut;
+    RemoteServer* m_remoteServer;
+    QList<RemoteClient*> m_remoteClients;
 };
 
 #endif

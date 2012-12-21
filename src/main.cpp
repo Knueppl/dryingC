@@ -29,9 +29,9 @@ void signal_handler(int)
 int main(int argc, char** argv)
 {
     /* If lock file does exist, run as client. */
-    if (QFile::exists(LOCK_FILE))
+    if (QFile::exists(PID_FILE))
     {
-        qDebug() << "Lock file \"" << LOCK_FILE << "\" exists. Run as client.";
+        qDebug() << "Pid file \"" << PID_FILE << "\" exists. Run as client.";
 
         QCoreApplication app(argc, argv);
         Client client;
@@ -70,7 +70,6 @@ int main(int argc, char** argv)
     if (!file.open(QIODevice::WriteOnly))
     {
         qDebug() << *argv << ": can't create lock file \"" << LOCK_FILE << "\".";
-        return 1;
     }
 
     file.close();

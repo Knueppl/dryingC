@@ -4,6 +4,7 @@
 #include "PortFactory.h"
 #include "Port.h"
 #include "STLM75.h"
+#include "RemoteServer.h"
 
 #include <QCoreApplication>
 #include <QDomNode>
@@ -14,9 +15,12 @@
 DryingControl::DryingControl(const QByteArray& configFile)
     : m_alertHandler(0),
       m_pipeIn("/etc/dryingC/pipe-out.key"),
-      m_pipeOut("/etc/dryingC/pipe-in.key")
+      m_pipeOut("/etc/dryingC/pipe-in.key"),
+      m_remoteServer(new RemoteServer("/etc/dryingC/server.xml"))
 {
     this->connect(&m_pipeIn, SIGNAL(messageReceived(const PipeSubscriber*)), this, SLOT(messageReceived(const PipeSubscriber*)));
+    this->connect(m_remoteServer, SIGNAL(newConnection(RemoteClient*)), this, SLOT(newRemoteClient(RemoteClient*)));
+    this->connect(m_remoteServer, SIGNAL(delConnection(RemoteClient*)), this, SLOT(rmRemoteClient(RemoteClient*)));
 
     QFile file(configFile);
     QDomDocument doc;
@@ -73,6 +77,8 @@ DryingControl::~DryingControl(void)
     delete m_alertHandler;
     qDeleteAll(m_digitalIO);
     qDeleteAll(m_temperatures);
+    qDeleteAll(m_remoteClients);
+    delete m_remoteServer;
 }
 
 void DryingControl::configureDigitalIO(const QDomNode& node)
@@ -235,4 +241,24 @@ void DryingControl::sendStateThrowPipe(void)
 
     stream.flush();
     m_pipeOut.send(msg);
+}
+
+void DryingControl::newRemoteClient(RemoteClient* client)
+{
+    m_remoteClients.push_back(client);
+    this->connect(client, SIGNAL(command(RemoteClient::Command)), this, SLOT(commandFromClient(RemoteClient::Command)));
+}
+
+void DryingControl::rmRemoteClient(RemoteClient* client)
+{
+    this->disconnect(client, SIGNAL(command(RemoteClient::Command)), this, SLOT(commandFromClient(RemoteClient::Command)));
+    m_remoteClients.removeOne(client);
+}
+
+void DryingControl::commandFromClient(RemoteClient::Command command)
+{
+    if (command.isNull())
+        return;
+
+
 }
