@@ -11,6 +11,7 @@
 class QDomNode;
 class Port;
 class AlertHandler;
+class TempSensor;
 
 class DryingControl : public QObject
 {
@@ -32,10 +33,12 @@ private slots:
 
 private:
     void configureDigitalIO(const QDomNode& node);
+    void configureTempSensors(const QDomNode& node);
     Port* getPortByName(const QByteArray& portName);
     void sendStateThrowPipe(void);
 
     QVector<Port*> m_digitalIO;
+    QVector<TempSensor*> m_temperatures;
     AlertHandler* m_alertHandler;
     PipeSubscriber m_pipeIn;
     PipePublisher m_pipeOut;

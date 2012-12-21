@@ -3,6 +3,7 @@
 #include "AlertHandler.h"
 #include "PortFactory.h"
 #include "Port.h"
+#include "STLM75.h"
 
 #include <QCoreApplication>
 #include <QDomNode>
@@ -55,6 +56,8 @@ DryingControl::DryingControl(const QByteArray& configFile)
             this->configureDigitalIO(tag);
         else if (tag.tagName() == "alert_handler")
             m_alertHandler = new AlertHandler(tag);
+        else if (tag.tagName() == "temp_sensor")
+            this->configureTempSensors(tag);
     }
 
     Port* smokeAlarm(this->getPortByName("Feuermelder"));
@@ -69,6 +72,7 @@ DryingControl::~DryingControl(void)
 {
     delete m_alertHandler;
     qDeleteAll(m_digitalIO);
+    qDeleteAll(m_temperatures);
 }
 
 void DryingControl::configureDigitalIO(const QDomNode& node)
@@ -98,6 +102,31 @@ void DryingControl::configureDigitalIO(const QDomNode& node)
             continue;
 
         m_digitalIO.push_back(port);
+    }
+}
+
+void DryingControl::configureTempSensors(const QDomNode& node)
+{
+    MSG("configure temperature sensors");
+    const QDomNode root(node.toElement());
+
+    if (root.isNull())
+    {
+        MSG("xml node not valid");
+        return;
+    }
+
+    QDomNodeList nodes(root.childNodes());
+
+    for (int i = 0; i < nodes.size(); i++)
+    {
+        const QDomElement tag(nodes.at(i).toElement());
+
+        if (tag.isNull())
+            continue;
+
+        if (tag.tagName() == "stlm75")
+            m_temperatures.push_back(new STLM75(tag));
     }
 }
 
@@ -167,12 +196,16 @@ void DryingControl::messageReceived(const PipeSubscriber* pipe)
 
 namespace {
 const char* MSG_STATE_DIGPORTS = "###############################\n"
-                                 "# Digitalports state          #\n"
-                                 "###############################\n\n";
+                                 "# Digitalports State          #\n"
+                                 "###############################\n";
 
 const char* MSG_ALERTHANDLER = "###############################\n"
                                "# Alert                       #\n"
                                "###############################\n";
+
+const char* MSG_STATE_TEMPERATURE = "###############################\n"
+                                    "# Temperature Sensors         #\n"
+                                    "###############################\n";
 }
 
 void DryingControl::sendStateThrowPipe(void)
@@ -190,6 +223,14 @@ void DryingControl::sendStateThrowPipe(void)
     {
         stream << MSG_ALERTHANDLER;
         stream << *m_alertHandler;
+    }
+
+    stream << MSG_STATE_TEMPERATURE;
+
+    for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor < m_temperatures.end(); ++sensor)
+    {
+        (**sensor).grab();
+        stream << **sensor;
     }
 
     stream.flush();
