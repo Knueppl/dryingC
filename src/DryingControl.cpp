@@ -289,12 +289,7 @@ void DryingControl::tick(void)
     {
         for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor < m_temperatures.end(); ++sensor)
         {
-            QByteArray data;
-            QTextStream out(&data);
-
-            out << **sensor;
-            out.flush();
-            (**client).sendData(data);
+            (**client).sendData((**sensor).dataString());
         }
     }
 }
