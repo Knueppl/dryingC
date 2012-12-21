@@ -289,6 +289,8 @@ void DryingControl::tick(void)
     {
         for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor < m_temperatures.end(); ++sensor)
         {
+            qDebug() << __PRETTY_FUNCTION__;
+            qDebug() << "data String: " << (**sensor).dataString();
             (**client).sendData((**sensor).dataString());
         }
     }
