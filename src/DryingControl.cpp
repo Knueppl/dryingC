@@ -283,7 +283,7 @@ void DryingControl::tick(void)
 {
     for (QList<RemoteClient*>::iterator client = m_realTimeClients.begin(); client != m_realTimeClients.end(); ++client)
     {
-        for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor != m_temperatures.end(); ++sensor)
+        for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor < m_temperatures.end(); ++sensor)
         {
             QByteArray data;
             QTextStream out(data);
