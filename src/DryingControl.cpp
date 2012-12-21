@@ -21,6 +21,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
     this->connect(&m_pipeIn, SIGNAL(messageReceived(const PipeSubscriber*)), this, SLOT(messageReceived(const PipeSubscriber*)));
     this->connect(m_remoteServer, SIGNAL(newConnection(RemoteClient*)), this, SLOT(newRemoteClient(RemoteClient*)));
     this->connect(m_remoteServer, SIGNAL(delConnection(RemoteClient*)), this, SLOT(rmRemoteClient(RemoteClient*)));
+    this->connect(&m_timer, SIGNAL(timeout()), this, SLOT(tick()));
 
     QFile file(configFile);
     QDomDocument doc;
@@ -253,12 +254,43 @@ void DryingControl::rmRemoteClient(RemoteClient* client)
 {
     this->disconnect(client, SIGNAL(command(RemoteClient::Command)), this, SLOT(commandFromClient(RemoteClient::Command)));
     m_remoteClients.removeOne(client);
+    m_realTimeClients.removeAll(client);
 }
 
 void DryingControl::commandFromClient(RemoteClient::Command command)
 {
-    if (command.isNull())
+    RemoteClient* client = qobject_cast<RemoteClient*>(this->sender());
+
+    if (!client || command.isNull())
         return;
 
+    switch (command.type())
+    {
+    case RemoteClient::Command::RealTimeOn:
+        if (!m_realTimeClients.contains(client)) m_realTimeClients.push_back(client);
+        break;
 
+    case RemoteClient::Command::RealTimeOff:
+        m_realTimeClients.removeAll(client);
+        break;
+
+    default:
+        break;
+    }
+}
+
+void DryingControl::tick(void)
+{
+    for (QList<RemoteClient*>::iterator client = m_realTimeClients.begin(); client != m_realTimeClients.end(); ++client)
+    {
+        for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor != m_temperatures.end(); ++sensor)
+        {
+            QByteArray data;
+            QTextStream out(data);
+
+            out << **sensor;
+            out.flush();
+            (**client).sendData(data);
+        }
+    }
 }

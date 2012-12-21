@@ -9,6 +9,7 @@
 #include <QVector>
 #include <QList>
 #include <QByteArray>
+#include <QTimer>
 
 class QDomNode;
 class Port;
@@ -36,6 +37,7 @@ private slots:
     void newRemoteClient(RemoteClient* client);
     void rmRemoteClient(RemoteClient* client);
     void commandFromClient(RemoteClient::Command command);
+    void tick(void);
 
 private:
     void configureDigitalIO(const QDomNode& node);
@@ -50,6 +52,8 @@ private:
     PipePublisher m_pipeOut;
     RemoteServer* m_remoteServer;
     QList<RemoteClient*> m_remoteClients;
+    QList<RemoteClient*> m_realTimeClients;
+    QTimer m_timer;
 };
 
 #endif
