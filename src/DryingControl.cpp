@@ -22,6 +22,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
     this->connect(m_remoteServer, SIGNAL(newConnection(RemoteClient*)), this, SLOT(newRemoteClient(RemoteClient*)));
     this->connect(m_remoteServer, SIGNAL(delConnection(RemoteClient*)), this, SLOT(rmRemoteClient(RemoteClient*)));
     this->connect(&m_timer, SIGNAL(timeout()), this, SLOT(tick()));
+    m_timer.start(2000);
 
     QFile file(configFile);
     QDomDocument doc;
@@ -281,12 +282,15 @@ void DryingControl::commandFromClient(RemoteClient::Command command)
 
 void DryingControl::tick(void)
 {
+    for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor < m_temperatures.end(); ++sensor)
+        (**sensor).grab();
+
     for (QList<RemoteClient*>::iterator client = m_realTimeClients.begin(); client != m_realTimeClients.end(); ++client)
     {
         for (QVector<TempSensor*>::iterator sensor = m_temperatures.begin(); sensor < m_temperatures.end(); ++sensor)
         {
             QByteArray data;
-            QTextStream out(data);
+            QTextStream out(&data);
 
             out << **sensor;
             out.flush();
