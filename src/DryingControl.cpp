@@ -72,6 +72,13 @@ DryingControl::DryingControl(const QByteArray& configFile)
         return;
 
     this->connect(smokeAlarm, SIGNAL(valueChanged(bool)), this, SLOT(smokeAlarmStateChanged(bool)));
+
+    Port* alertPort(this->getPortByName("Alert"));
+
+    if (!alertPort)
+        return;
+
+    m_alertHandler->setAlertPort(alertPort);
 }
 
 DryingControl::~DryingControl(void)
