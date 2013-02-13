@@ -67,10 +67,11 @@ DryingControl::DryingControl(const QByteArray& configFile)
     }
 
     Port* smokeAlarm(this->getPortByName("Feuermelder"));
-
+qDebug() << "feuermelder = " << smokeAlarm;
+qDebug() << "handler = " << m_alertHandler;
     if (!m_alertHandler || !smokeAlarm)
         return;
-
+qDebug() << "DryingControl found port Feuerlmelder";
     this->connect(smokeAlarm, SIGNAL(valueChanged(bool)), this, SLOT(smokeAlarmStateChanged(bool)));
 
     Port* alertPort(this->getPortByName("Alert"));
