@@ -66,11 +66,13 @@ DryingControl::DryingControl(const QByteArray& configFile)
             this->configureTempSensors(tag);
     }
 
-    Port* smokeAlarm(this->getPortByName("Feuermelder"));
-    if (!m_alertHandler || !smokeAlarm)
+    if  (!m_alertHandler)
         return;
 
-    this->connect(smokeAlarm, SIGNAL(valueChanged(bool)), this, SLOT(smokeAlarmStateChanged(bool)));
+    Port* smokeAlarm(this->getPortByName("Feuermelder"));
+
+    if (smokeAlarm)
+        this->connect(smokeAlarm, SIGNAL(valueChanged(bool)), this, SLOT(smokeAlarmStateChanged(bool)));
 
     Port* alertPort(this->getPortByName("Alert"));
 
@@ -81,6 +83,9 @@ DryingControl::DryingControl(const QByteArray& configFile)
 
     if (resetPort)
         m_alertHandler->setResetPort(resetPort);
+
+    for (int i = 0; i < m_temperatures.size(); i++)
+        this->connect(&m_temperatures[i], SIGNAL(alert()), m_alertHandler, SLOT(startAlertRoutine()));
 }
 
 DryingControl::~DryingControl(void)
