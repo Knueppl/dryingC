@@ -85,7 +85,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
         m_alertHandler->setResetPort(resetPort);
 
     for (int i = 0; i < m_temperatures.size(); i++)
-        this->connect(&m_temperatures[i], SIGNAL(alert()), m_alertHandler, SLOT(startAlertRoutine()));
+        this->connect(m_temperatures[i], SIGNAL(alert()), m_alertHandler, SLOT(startAlertRoutine()));
 }
 
 DryingControl::~DryingControl(void)
