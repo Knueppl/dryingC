@@ -177,6 +177,10 @@ void DryingControl::smokeAlarmStateChanged(bool value)
     }
 
     m_alertHandler->startAlertRoutine();
+    Port* port(this->getPortByName("Shutdown"));
+
+    if (port)
+        port->setValue(false);
 }
 
 void DryingControl::messageReceived(const PipeSubscriber* pipe)
