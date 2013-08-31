@@ -66,6 +66,11 @@ DryingControl::DryingControl(const QByteArray& configFile)
             this->configureTempSensors(tag);
     }
 
+    Port* shutdown(this->getPortByName("Shutdown"));
+
+    if (shutdown)
+        shutdown->setValue(true);
+
     if  (!m_alertHandler)
         return;
 
