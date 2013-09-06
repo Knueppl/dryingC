@@ -69,7 +69,7 @@ DryingControl::DryingControl(const QByteArray& configFile)
     Port* shutdown(this->getPortByName("Shutdown"));
 
     if (shutdown)
-        shutdown->setValue(true);
+        shutdown->setValue(false);
 
     if  (!m_alertHandler)
         return;
@@ -185,7 +185,7 @@ void DryingControl::smokeAlarmStateChanged(bool value)
     Port* port(this->getPortByName("Shutdown"));
 
     if (port)
-        port->setValue(false);
+        port->setValue(true);
 }
 
 void DryingControl::messageReceived(const PipeSubscriber* pipe)
