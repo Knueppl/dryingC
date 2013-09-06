@@ -10,6 +10,8 @@
 #include <QDomNode>
 #include <QDebug>
 
+#include <unistd.h>
+
 #define MSG(x) (io() << "DryingControl: " << x << ".")
 
 DryingControl::DryingControl(const QByteArray& configFile)
@@ -185,7 +187,11 @@ void DryingControl::smokeAlarmStateChanged(bool value)
     Port* port(this->getPortByName("Shutdown"));
 
     if (port)
+    {
         port->setValue(true);
+        ::sleep(1);
+        port->setValue(false);
+    }
 }
 
 void DryingControl::messageReceived(const PipeSubscriber* pipe)
